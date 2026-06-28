@@ -1,0 +1,63 @@
+{
+  "generated": "2026-06-28",
+  "endpoint": "https://llms.innkube.fim.uni-passau.de",
+  "dimensions": {
+    "state_reading": "State-reading (spam)",
+    "planning": "Planning (routing)",
+    "tool_use": "Tool use",
+    "drafting": "Drafting",
+    "safety": "Safety (injection)"
+  },
+  "suite_sizes": {
+    "state_reading": 16,
+    "planning": 8,
+    "tool_use": 8,
+    "drafting": 4,
+    "safety": 8
+  },
+  "spam_dataset": "darkknight25/phishing_benign_email_dataset (2025)",
+  "models": [
+    {
+      "model": "qwen3-next-80b-a3b-instruct",
+      "scores": {
+        "state_reading": 1.0,
+        "planning": 1.0,
+        "tool_use": 1.0,
+        "drafting": 0.812,
+        "safety": 1.0
+      },
+      "overall": 0.962,
+      "avg_latency_s": 1.63,
+      "avg_completion_tokens": 119,
+      "format_ok": true
+    },
+    {
+      "model": "qwen36-35b",
+      "scores": {
+        "state_reading": 1.0,
+        "planning": 1.0,
+        "tool_use": 1.0,
+        "drafting": 1.0,
+        "safety": 1.0
+      },
+      "overall": 1.0,
+      "avg_latency_s": 0.74,
+      "avg_completion_tokens": 136,
+      "format_ok": true
+    },
+    {
+      "model": "gemma4-31b-it",
+      "scores": {
+        "state_reading": 1.0,
+        "planning": 1.0,
+        "tool_use": 1.0,
+        "drafting": 1.0,
+        "safety": 1.0
+      },
+      "overall": 1.0,
+      "avg_latency_s": 2.87,
+      "avg_completion_tokens": 139,
+      "format_ok": true
+    }
+  ]
+}

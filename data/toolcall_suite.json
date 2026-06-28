@@ -1,0 +1,10 @@
+[
+  {"id": "t1", "request": "What emails are in my inbox right now?", "tool": "list_messages"},
+  {"id": "t2", "request": "Open Sara's email and read the full message", "tool": "get_thread"},
+  {"id": "t3", "request": "Mark the lottery email as spam", "tool": "label_message"},
+  {"id": "t4", "request": "Write a reply to David confirming the budget number", "tool": "create_draft"},
+  {"id": "t5", "request": "What meetings do I have next week?", "tool": "list_events"},
+  {"id": "t6", "request": "Find a free 30-minute slot for me and Anna", "tool": "suggest_time"},
+  {"id": "t7", "request": "Schedule a project sync with Anna on Tuesday at 10am", "tool": "create_event"},
+  {"id": "t8", "request": "Flag Mark's onboarding email as needing a reply", "tool": "label_message"}
+]

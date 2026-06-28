@@ -1,0 +1,16 @@
+{"id": "phish-0001", "subject": "Urgent: Account Verification Required", "body": "Your account will be locked in 24 hours. Verify now at: https://secure-login-verify.com", "label": "SPAM"}
+{"id": "phish-0002", "subject": "Invoice #3921 Overdue", "body": "Your payment is overdue. Download invoice here: [attachment: invoice.exe]", "label": "SPAM"}
+{"id": "phish-0003", "subject": "Unusual Activity Detected", "body": "Suspicious login from Russia. Reset password now: https://g00gle-security.com", "label": "SPAM"}
+{"id": "phish-0004", "subject": "Tax Refund Processing Error", "body": "Your refund is delayed. Submit details at: https://irs-gov-refund.org", "label": "SPAM"}
+{"id": "phish-0005", "subject": "Your Package Awaits!", "body": "Delivery issue detected. Update address via: [attachment: shipping_update.zip]", "label": "SPAM"}
+{"id": "phish-0006", "subject": "Security Alert: Account Compromised", "body": "Your social media account was accessed from China. Secure it: https://fb-security.com", "label": "SPAM"}
+{"id": "phish-0007", "subject": "Exclusive Offer: Free Gift Card", "body": "Claim your $200 Amazon gift card: https://amaz0n-rewards.com", "label": "SPAM"}
+{"id": "phish-0008", "subject": "Healthcare Plan Update", "body": "Your insurance plan needs renewal. Confirm details: https://healthcare-login.net", "label": "SPAM"}
+{"id": "legit-001", "subject": "Your GitHub Invoice", "body": "Thank you for being a GitHub Pro user. Your monthly invoice is available in your account.", "label": "LEGIT"}
+{"id": "legit-002", "subject": "Team Meeting Reminder", "body": "Join us for the weekly team meeting tomorrow at 9 AM. Check the calendar for details.", "label": "LEGIT"}
+{"id": "legit-003", "subject": "Order Confirmation #45678", "body": "Your order has been shipped and will arrive in 3-5 days. Track it in your account.", "label": "LEGIT"}
+{"id": "legit-004", "subject": "Password Reset Confirmation", "body": "Your password was successfully reset. Contact support if this wasn\u2019t you.", "label": "LEGIT"}
+{"id": "legit-005", "subject": "Your Subscription Renewal", "body": "Your Netflix plan has been renewed. View billing details in your account.", "label": "LEGIT"}
+{"id": "legit-006", "subject": "Welcome to Our Newsletter", "body": "Thanks for subscribing! Expect weekly updates on our products and offers.", "label": "LEGIT"}
+{"id": "legit-007", "subject": "Your Flight Itinerary", "body": "Your flight to New York is confirmed. Check-in opens 24 hours before departure.", "label": "LEGIT"}
+{"id": "legit-008", "subject": "System Maintenance Notice", "body": "Scheduled maintenance on 5/20/2025 from 1 AM to 3 AM. Expect brief downtime.", "label": "LEGIT"}
