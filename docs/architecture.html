@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personal Assistant Agent — Architecture</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 2.5rem;
+         background: #0f172a; color: #e2e8f0; }
+  h1 { font-weight: 600; margin: 0 0 .25rem; }
+  p.sub { color: #94a3b8; margin: 0 0 1.5rem; }
+  .card { background: #fff; border-radius: 14px; padding: 1.5rem;
+          box-shadow: 0 10px 40px rgba(0,0,0,.4); }
+  .legend { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 1.25rem;
+            color: #cbd5e1; font-size: .9rem; }
+  .legend span { display: inline-flex; align-items: center; gap: .4rem; }
+  .dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: "default" });</script>
+</head>
+<body>
+  <h1>Personal Assistant Agent — LangGraph</h1>
+  <p class="sub">Supervisor &rarr; specialist agents &rarr; human-in-the-loop gate &rarr; execution</p>
+  <div class="card">
+    <pre class="mermaid">
+flowchart TD
+    START([▶ Start]) --> SUP{{Supervisor<br/>classify intent}}
+    SUP -->|email| EA[Email Agent]
+    SUP -->|calendar| CA[Calendar Agent]
+    SUP -->|cross-service| CS[Cross-Service router]
+    CS --> CA
+    EA <-->|ReAct loop| ET[(Email Tools)]
+    CA <-->|ReAct loop| CT[(Calendar Tools)]
+    EA -. "gated: send_email" .-> H{{🔒 HITL Gate<br/>human approval}}
+    CA -. "gated: create_event" .-> H
+    H -->|approve| EX[Execute Action]
+    H -->|reject| E([■ End])
+    EX --> E
+    EA -->|done| E
+    CA -->|done| E
+    classDef sup fill:#4f46e5,stroke:#312e81,color:#fff;
+    classDef agent fill:#0ea5e9,stroke:#075985,color:#fff;
+    classDef tool fill:#10b981,stroke:#065f46,color:#fff;
+    classDef gate fill:#ef4444,stroke:#7f1d1d,color:#fff;
+    classDef term fill:#e2e8f0,stroke:#475569,color:#0f172a;
+    class SUP,CS sup;
+    class EA,CA agent;
+    class ET,CT tool;
+    class H,EX gate;
+    class START,E term;
+    </pre>
+  </div>
+  <div class="legend">
+    <span><i class="dot" style="background:#4f46e5"></i>Router / supervisor</span>
+    <span><i class="dot" style="background:#0ea5e9"></i>Specialist agent</span>
+    <span><i class="dot" style="background:#10b981"></i>Tools</span>
+    <span><i class="dot" style="background:#ef4444"></i>Safety gate / execution</span>
+  </div>
+</body>
+</html>
