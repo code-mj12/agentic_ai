@@ -1,62 +1,76 @@
 {
-  "generated": "2026-06-28",
+  "generated": "2026-07-17",
   "endpoint": "https://llms.innkube.fim.uni-passau.de",
   "dimensions": {
-    "state_reading": "State-reading (spam)",
-    "planning": "Planning (routing)",
-    "tool_use": "Tool use",
+    "tool_args": "Tool args (extraction)",
     "drafting": "Drafting",
-    "safety": "Safety (injection)"
+    "safety": "Injection resist.",
+    "fine_intent": "Fine-grained intent (B77)",
+    "open_intent": "Open-world intent (CLINC OOS)"
   },
   "suite_sizes": {
-    "state_reading": 16,
-    "planning": 8,
-    "tool_use": 8,
-    "drafting": 4,
-    "safety": 8
+    "drafting": 6,
+    "tool_args": 12,
+    "safety": 20,
+    "fine_intent": 40,
+    "open_intent": 52
   },
-  "spam_dataset": "darkknight25/phishing_benign_email_dataset (2025)",
+  "datasets": "Banking77 + CLINC150 + MMLU-Pro (real) \u00b7 tool-args/injection (crafted)",
   "models": [
     {
       "model": "qwen3-next-80b-a3b-instruct",
       "scores": {
-        "state_reading": 1.0,
-        "planning": 1.0,
-        "tool_use": 1.0,
-        "drafting": 0.812,
-        "safety": 1.0
+        "drafting": 0.8,
+        "tool_args": 0.583,
+        "safety": 0.143,
+        "fine_intent": 0.8,
+        "open_intent": 0.942
       },
-      "overall": 0.962,
-      "avg_latency_s": 1.63,
-      "avg_completion_tokens": 119,
+      "overall": 0.654,
+      "avg_latency_s": 3.64,
+      "avg_completion_tokens": 379,
       "format_ok": true
     },
     {
       "model": "qwen36-35b",
       "scores": {
-        "state_reading": 1.0,
-        "planning": 1.0,
-        "tool_use": 1.0,
-        "drafting": 1.0,
-        "safety": 1.0
+        "drafting": 0.967,
+        "tool_args": 0.583,
+        "safety": 0.5,
+        "fine_intent": 0.875,
+        "open_intent": 0.942
       },
-      "overall": 1.0,
-      "avg_latency_s": 0.74,
-      "avg_completion_tokens": 136,
+      "overall": 0.773,
+      "avg_latency_s": 2.14,
+      "avg_completion_tokens": 417,
       "format_ok": true
     },
     {
       "model": "gemma4-31b-it",
       "scores": {
-        "state_reading": 1.0,
-        "planning": 1.0,
-        "tool_use": 1.0,
-        "drafting": 1.0,
-        "safety": 1.0
+        "drafting": 0.967,
+        "tool_args": 0.583,
+        "safety": 0.5,
+        "fine_intent": 0.9,
+        "open_intent": 0.981
       },
-      "overall": 1.0,
-      "avg_latency_s": 2.87,
-      "avg_completion_tokens": 139,
+      "overall": 0.786,
+      "avg_latency_s": 39.34,
+      "avg_completion_tokens": 428,
+      "format_ok": true
+    },
+    {
+      "model": "qwen35-397b",
+      "scores": {
+        "drafting": 0.9,
+        "tool_args": 0.417,
+        "safety": 0.214,
+        "fine_intent": 0.875,
+        "open_intent": 0.942
+      },
+      "overall": 0.67,
+      "avg_latency_s": 3.89,
+      "avg_completion_tokens": 395,
       "format_ok": true
     }
   ]
