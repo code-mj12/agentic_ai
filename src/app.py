@@ -74,8 +74,8 @@ def _short_model(m):
             "qwen35-397b": "Qwen3.5-395B"}.get(m, m)
 
 
-SHORT_DIM = {"state_reading": "State-read", "planning": "Plan", "tool_use": "Tools",
-             "drafting": "Draft", "safety": "Safety"}
+SHORT_DIM = {"tool_args": "Tool-args", "drafting": "Draft", "safety": "Injection",
+             "fine_intent": "B77 intent", "open_intent": "CLINC OOS"}
 
 
 def benchmark_dims(data):
@@ -109,6 +109,37 @@ def benchmark_dim_df(data):
     return pd.DataFrame(rows)
 
 
+# Published research baselines for the same/closest tests (cited in docs/report.md).
+RESEARCH_BASELINES = [
+    ["B77 — fine-grained intent", "RoBERTa-base, fine-tuned", "93.9%", "Casanueva 2020"],
+    ["B77 — fine-grained intent", "GPT-4 / GPT-3.5, zero-shot", "~68–78%", "Loukas 2023"],
+    ["CLINC — in-scope + OOS", "BERT, fine-tuned", "~96%", "Larson 2019"],
+    ["CLINC — in-scope + OOS", "SVM/MLP baseline", "89–92%", "Larson 2019"],
+    ["CLINC — in-scope + OOS", "GPT-4, zero-shot", "~86%", "Parikh 2023"],
+    ["Tool-args (arg extraction)", "τ-bench SOTA function-callers", "<50%", "Yao 2024"],
+    ["Inject-resist", "ReAct GPT-4, indirect injection", "~76% resist", "InjecAgent 2024"],
+]
+RESEARCH_HEADERS = ["Suite (ours)", "Published model / method", "Score", "Source"]
+
+# Published per-model results, mapped to our dimension keys (— where the paper
+# doesn't cover that suite). Appended as extra rows in the results table.
+RESEARCH_MODEL_ROWS = [
+    ("RoBERTa-base, fine-tuned (Casanueva 2020)", {"fine_intent": "94"}),
+    ("BERT, fine-tuned (Larson 2019)", {"open_intent": "96"}),
+    ("SVM/MLP baseline (Larson 2019)", {"open_intent": "~90"}),
+    ("GPT-4, zero-shot (Loukas/Parikh 2023)", {"fine_intent": "~73", "open_intent": "~86"}),
+]
+
+
+def research_model_rows(data):
+    dims = benchmark_dims(data)
+    rows = []
+    for name, vals in RESEARCH_MODEL_ROWS:
+        row = [name, "—"] + [vals.get(d, "—") for d in dims] + ["—", "—", "—"]
+        rows.append(row)
+    return rows
+
+
 def benchmark_latency_df(data):
     return pd.DataFrame([{"model": _short_model(r["model"]),
                           "latency_s": r["avg_latency_s"]} for r in data["models"]])
@@ -121,23 +152,24 @@ def benchmark_analysis(data):
     lines = ["### Analysis", ""]
     lines.append(
         f"- **Best overall: {_short_model(best['model'])}** — {best['overall']:.0%} "
-        f"across the five capabilities (~{best['avg_latency_s']}s).")
+        f"across the {len(data['dimensions'])} capabilities (~{best['avg_latency_s']}s).")
     if fast["model"] != best["model"]:
         lines.append(
             f"- **Fastest: {_short_model(fast['model'])}** — ~{fast['avg_latency_s']}s "
             f"at {fast['overall']:.0%} overall.")
     # call out any sub-perfect dimension
     for r in models:
-        weak = [SHORT_DIM[d] for d, v in r["scores"].items() if v < 0.85]
+        weak = {d: v for d, v in r["scores"].items() if v < 0.85}
         if weak:
-            lines.append(f"- **{_short_model(r['model'])}** dips on {', '.join(weak)} "
-                         f"({', '.join(f'{r['scores'][k]:.0%}' for k in r['scores'] if SHORT_DIM[k] in weak)}).")
+            detail = ", ".join(f"{SHORT_DIM.get(d, d)} {v:.0%}" for d, v in weak.items())
+            lines.append(f"- **{_short_model(r['model'])}** dips on {detail}.")
+    spread = max(m["overall"] for m in models) - min(m["overall"] for m in models)
     lines.append(
-        "- **Takeaway** (survey's evaluation axis): all three handle the core "
-        "capabilities well, so quality no longer separates them — the choice falls "
-        "to **latency, token cost, and format reliability**. Memory / long-horizon "
-        "personalization is *not* tested here (it needs multi-session evaluation, "
-        "which the survey itself flags as a gap).")
+        f"- **Takeaway:** the hard suites (injection, tool-args) create real spread "
+        f"({spread:.0%} between best and worst). Note that **larger is not better** — "
+        "the two biggest models rank last overall. See docs/report.md §5 for the "
+        "technical why-vs-research. Memory / long-horizon personalization is not tested "
+        "here (needs multi-session evaluation).")
     return "\n".join(lines)
 
 
@@ -277,91 +309,156 @@ def _render(chat, trace, pending, thread_id, keep_chat=False):
             box, title, draft_grp, to, subject, body, event, "")
 
 
+# ── Model-benchmark visuals ──────────────────────────────────
+def _score_cell(v):
+    pct = round(v * 100)
+    hue = round(v * 120)  # 0 = red (low) → 120 = green (high)
+    return (f'<div style="position:relative;background:#8883;border-radius:5px;height:22px;">'
+            f'<div style="width:{pct}%;background:hsl({hue},62%,45%);height:100%;border-radius:5px;"></div>'
+            f'<span style="position:absolute;inset:0;text-align:center;line-height:22px;'
+            f'font-size:12px;font-weight:600;color:#fff;text-shadow:0 0 3px #000;">{pct}%</span></div>')
+
+
+def capability_heatmap_html(data):
+    dims = benchmark_dims(data)
+    th = ('<th style="text-align:left;padding:6px 10px;font-size:12px;font-weight:600;">{}</th>')
+    head = "".join(th.format(SHORT_DIM.get(d, d)) for d in dims)
+    body = ""
+    for m in sorted(data["models"], key=lambda x: -x["overall"]):
+        cells = "".join(f'<td style="padding:4px 8px;min-width:66px;">{_score_cell(m["scores"][d])}</td>'
+                        for d in dims)
+        body += (f'<tr><td style="padding:4px 10px;font-weight:600;white-space:nowrap;">'
+                 f'{_short_model(m["model"])}</td>'
+                 f'<td style="padding:4px 8px;min-width:66px;">{_score_cell(m["overall"])}</td>{cells}</tr>')
+    return (f'<div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">'
+            f'<thead><tr>{th.format("Model")}{th.format("Overall")}{head}</tr></thead>'
+            f'<tbody>{body}</tbody></table></div>')
+
+
+def overall_bar_df(data):
+    return pd.DataFrame([{"model": _short_model(m["model"]), "overall %": round(m["overall"] * 100)}
+                         for m in sorted(data["models"], key=lambda x: -x["overall"])])
+
+
+def data_examples_md():
+    d = os.path.join(os.path.dirname(__file__), "..", "data")
+    jl = lambda fn: [json.loads(x) for x in open(os.path.join(d, fn)) if x.strip()]
+    jj = lambda fn: json.load(open(os.path.join(d, fn)))
+    b77 = jl("banking77_sample.jsonl")[0]
+    clinc = jl("clinc150_sample.jsonl")
+    ci = next(x for x in clinc if x["intent"] != "oos")
+    co = next(x for x in clinc if x["intent"] == "oos")
+    ta = jj("toolargs_suite.json")[0]
+    inj = next(x for x in jj("injection_resist_suite.json") if x.get("canary"))
+    dr = jj("draft_suite.json")[0]
+    return "\n".join([
+        f'**🏦 Banking77** — query: _“{b77["text"]}”_ → gold intent `{b77["intent"]}`',
+        "",
+        f'**🌐 CLINC150** — in-scope: _“{ci["text"]}”_ → `{ci["intent"]}` · '
+        f'out-of-scope: _“{co["text"]}”_ → `oos`',
+        "",
+        f'**🔧 Tool-args** — _“{ta["request"]}”_ → tool `{ta["tool"]}`, arg `{ta["arg"]}` '
+        "(note the distractor value in the request)",
+        "",
+        f'**🛡️ Injection** — email body: _“…{inj["body"][-120:]}”_ → the summary must **not** '
+        f'contain `{inj["canary"]}`',
+        "",
+        f'**✍️ Drafting** — from {dr["sender"]}: _“{dr["body"]}”_ → reply must address `{dr["key"]}`',
+    ])
+
+
 # ── UI ───────────────────────────────────────────────────────
 with gr.Blocks(title="Personal Assistant Agent", theme=gr.themes.Soft()) as demo:
     gr.Markdown("# 🤖 Personal Assistant Agent")
-    gr.Markdown(
-        "A LangGraph multi-agent demo: a **supervisor** routes your request to an "
-        "**email** or **calendar** agent. Write actions (draft / event) pause at a "
-        "**human-in-the-loop gate** where you review and edit before approving — "
-        "nothing is sent."
-    )
 
     thread_state = gr.State("")
     inbox_state = gr.State([])
     pending_state = gr.State(None)
 
-    with gr.Row():
-        # ── Left: conversation + controls ──
-        with gr.Column(scale=3):
-            chatbot = gr.Chatbot(height=340, label="Conversation")
+    with gr.Tabs():
+        # ══ TAB 1: the interactive assistant demo ══
+        with gr.Tab("💬 Assistant demo"):
+            gr.Markdown(
+                "A LangGraph multi-agent demo: a **supervisor** routes your request to an "
+                "**email** or **calendar** agent. Write actions (draft / event) pause at a "
+                "**human-in-the-loop gate** where you review and edit before approving — "
+                "nothing is sent.")
             with gr.Row():
-                msg = gr.Textbox(placeholder="e.g. Draft a reply to Sara agreeing to review her slides",
-                                 scale=5, show_label=False, autofocus=True)
-                send_btn = gr.Button("Send", variant="primary", scale=1)
+                with gr.Column(scale=3):
+                    chatbot = gr.Chatbot(height=340, label="Conversation")
+                    with gr.Row():
+                        msg = gr.Textbox(placeholder="e.g. Draft a reply to Sara agreeing to review her slides",
+                                         scale=5, show_label=False, autofocus=True)
+                        send_btn = gr.Button("Send", variant="primary", scale=1)
+                    with gr.Group(visible=False) as approval_box:
+                        approval_title = gr.Markdown()
+                        with gr.Group(visible=False) as draft_group:
+                            draft_to = gr.Textbox(label="To")
+                            draft_subject = gr.Textbox(label="Subject")
+                            draft_body = gr.Textbox(label="Body", lines=8)
+                        event_md = gr.Markdown(visible=False)
+                        with gr.Row():
+                            approve_btn = gr.Button("✅ Approve & save", variant="primary")
+                            reject_btn = gr.Button("❌ Reject", variant="stop")
+                    gr.Examples(
+                        examples=[
+                            "Read Sara's email and draft a reply agreeing to review her slides by Thursday.",
+                            "Draft a reply to Mark confirming the new hire starts Monday.",
+                            "Triage my inbox: which need a reply, which are FYI, which are spam?",
+                            "Anna wants a 1-hour project sync this week. Find a free slot and create the event.",
+                        ],
+                        inputs=msg,
+                    )
+                    with gr.Accordion("🔎 Live trace", open=True):
+                        trace_md = gr.Markdown("_Send a message to begin._")
+                with gr.Column(scale=2):
+                    with gr.Row():
+                        refresh_btn = gr.Button("🔄 Refresh", size="sm")
+                        reset_btn = gr.Button("♻️ Reset demo data", size="sm")
+                    with gr.Tab("📥 Inbox"):
+                        inbox_df = gr.Dataframe(headers=INBOX_HEADERS, value=inbox_rows(A.current_inbox()),
+                                                interactive=False, wrap=True, label="Click a row to read it")
+                        email_body = gr.Markdown("_Select an email above to read it._")
+                    with gr.Tab("📅 Calendar"):
+                        calendar_df = gr.Dataframe(headers=CAL_HEADERS, value=calendar_rows(A.current_events()),
+                                                   interactive=False, wrap=True)
+                    with gr.Tab("📝 Drafts"):
+                        drafts_df = gr.Dataframe(headers=DRAFT_HEADERS, value=draft_rows(A.current_drafts()),
+                                                 interactive=False, wrap=True)
 
-            # ── Human-in-the-loop review panel (appears right here when the
-            #    agent proposes a draft or event) ──
-            with gr.Group(visible=False) as approval_box:
-                approval_title = gr.Markdown()
-                with gr.Group(visible=False) as draft_group:
-                    draft_to = gr.Textbox(label="To")
-                    draft_subject = gr.Textbox(label="Subject")
-                    draft_body = gr.Textbox(label="Body", lines=8)
-                event_md = gr.Markdown(visible=False)
+        # ══ TAB 2: the model benchmark (full width, chat hidden) ══
+        with gr.Tab("📊 Model benchmark"):
+            _bm = load_benchmark()
+            if not _bm:
+                gr.Markdown("No benchmark yet. Run `python3 src/compare_models.py`, then restart.")
+            else:
+                _sz, _dims = _bm["suite_sizes"], _bm["dimensions"]
+                gr.Markdown(
+                    f"## Which LLM backend is best for the assistant?\n"
+                    f"_Generated {_bm['generated']} · **4 models** × **{len(_dims)} hard suites** · "
+                    "temperature 0 · deterministic scoring (no LLM judge)._")
+                with gr.Accordion("🔍 Example test items — what each suite actually asks", open=True):
+                    gr.Markdown(data_examples_md())
+
+                gr.Markdown("### 📈 Capability scores  \n_Colour = score (red → green). "
+                            "Our 4 models, ranked by overall._")
+                gr.HTML(capability_heatmap_html(_bm))
+
                 with gr.Row():
-                    approve_btn = gr.Button("✅ Approve & save", variant="primary")
-                    reject_btn = gr.Button("❌ Reject", variant="stop")
-
-            gr.Examples(
-                examples=[
-                    "Read Sara's email and draft a reply agreeing to review her slides by Thursday.",
-                    "Draft a reply to Mark confirming the new hire starts Monday.",
-                    "Triage my inbox: which need a reply, which are FYI, which are spam?",
-                    "Anna wants a 1-hour project sync this week. Find a free slot and create the event.",
-                ],
-                inputs=msg,
-            )
-            with gr.Accordion("🔎 Live trace", open=True):
-                trace_md = gr.Markdown("_Send a message to begin._")
-
-        # ── Right: live data views ──
-        with gr.Column(scale=2):
-            with gr.Row():
-                refresh_btn = gr.Button("🔄 Refresh", size="sm")
-                reset_btn = gr.Button("♻️ Reset demo data", size="sm")
-            with gr.Tab("📥 Inbox"):
-                inbox_df = gr.Dataframe(headers=INBOX_HEADERS, value=inbox_rows(A.current_inbox()),
-                                        interactive=False, wrap=True, label="Click a row to read it")
-                email_body = gr.Markdown("_Select an email above to read it._")
-            with gr.Tab("📅 Calendar"):
-                calendar_df = gr.Dataframe(headers=CAL_HEADERS, value=calendar_rows(A.current_events()),
-                                           interactive=False, wrap=True)
-            with gr.Tab("📝 Drafts"):
-                drafts_df = gr.Dataframe(headers=DRAFT_HEADERS, value=draft_rows(A.current_drafts()),
-                                         interactive=False, wrap=True)
-            with gr.Tab("📊 Models"):
-                _bm = load_benchmark()
-                if not _bm:
-                    gr.Markdown("No benchmark yet. Run `python3 compare_models.py` to "
-                                "generate the comparison, then restart the app.")
-                else:
-                    _sz = _bm["suite_sizes"]
-                    gr.Markdown(
-                        f"### Capability benchmark\n_Generated {_bm['generated']} · "
-                        "five capabilities (survey taxonomy): state-reading, planning, "
-                        "tool-use, drafting, safety · temperature 0._\n\n"
-                        f"_Suites: {_sz['state_reading']} real phishing emails, "
-                        f"{_sz['planning']} routing + {_sz['tool_use']} tool-use + "
-                        f"{_sz['drafting']} drafting + {_sz['safety']} injection cases._")
-                    gr.Dataframe(headers=benchmark_headers(_bm),
-                                 value=benchmark_summary_rows(_bm),
-                                 interactive=False, wrap=True)
-                    gr.BarPlot(benchmark_dim_df(_bm), x="dimension", y="score", color="model",
-                               title="Capability scores (%)", y_lim=[0, 100], height=260)
+                    gr.BarPlot(overall_bar_df(_bm), x="model", y="overall %",
+                               title="Overall score (%)", y_lim=[0, 100], height=260)
                     gr.BarPlot(benchmark_latency_df(_bm), x="model", y="latency_s",
-                               title="Average latency (seconds, lower is better)", height=240)
-                    gr.Markdown(benchmark_analysis(_bm))
+                               title="Avg latency (s, lower better)", height=260)
+
+                gr.Markdown("### 🆚 Our models vs. published research  \n_Our four models, then "
+                            "published models from papers (— = that paper doesn't cover our suite)._")
+                gr.Dataframe(headers=benchmark_headers(_bm),
+                             value=benchmark_summary_rows(_bm) + research_model_rows(_bm),
+                             interactive=False, wrap=True)
+                with gr.Accordion("📚 Published baselines — detail & sources", open=False):
+                    gr.Dataframe(headers=RESEARCH_HEADERS, value=RESEARCH_BASELINES,
+                                 interactive=False, wrap=True)
+                gr.Markdown(benchmark_analysis(_bm))
 
     OUT = [chatbot, trace_md, inbox_df, calendar_df, drafts_df,
            inbox_state, pending_state, thread_state,
