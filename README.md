@@ -20,7 +20,6 @@ illustration of the survey's core ideas, plus a model-comparison case study.
 │   ├── architecture.md       # diagram + node/state/tool reference
 │   ├── architecture.html     # standalone styled graph diagram
 │   └── report.md             # evaluation case study (criteria + results vs research)
-├── research/                 # survey PDF + seminar slides (main deliverable)
 ├── benchmark_results.json    # stored benchmark, shown in the app's 📊 Models tab
 ├── requirements.txt
 └── .env.example
@@ -61,8 +60,9 @@ Run all commands **from the repository root**.
 python3 src/app.py
 ```
 
-Open the printed URL (http://127.0.0.1:7860). Type a request — or click an
-example — and watch:
+Open the printed URL (http://127.0.0.1:7860). The app has **two top-level tabs**:
+
+**💬 Assistant demo** — type a request (or click an example) and watch:
 
 - the supervisor route it and the agents call tools step by step in the
   **live trace** panel;
@@ -76,14 +76,24 @@ example — and watch:
 Use **🔄 Refresh** to redraw the tables and **♻️ Reset demo data** to restore
 the starting inbox/calendar.
 
+**📊 Model benchmark** — a full-width view (chat hidden) with example test items,
+a colour-coded **capability-score heatmap**, overall/latency bar charts, and our
+models **beside published research baselines**. Loads instantly from
+`benchmark_results.json` — see the "Compare models" section below.
+
 ## Compare models
 
-The app's **📊 Models** tab shows a stored benchmark across **five capability
-dimensions** (the survey's taxonomy): state-reading (spam detection on a recent
-real [phishing dataset](https://huggingface.co/datasets/darkknight25/phishing_benign_email_dataset)),
-planning, tool-use, drafting, and safety (prompt-injection detection) — with
-per-capability scores, latency, token cost, bar charts, and analysis. Test data
-lives in [data/](data/). To (re)generate the results:
+The app's **📊 Models** tab shows a stored benchmark of **4 models** across **five
+hard suites**: **tool-argument extraction** (distractors), drafting, **prompt-injection
+resistance** (2025 attacks, per-email), and two real intent benchmarks —
+[Banking77](https://huggingface.co/datasets/mteb/banking77) (77 classes) and
+[CLINC150](https://huggingface.co/datasets/clinc/clinc_oos) (150 + out-of-scope). Scores
+are **graded (nothing at 0% or 100%)**: injection (per-email, 3 attack tiers) is the
+discriminator, and the two largest models rank last. The results table shows our
+per-model scores **beside published models from research papers** (fine-tuned RoBERTa /
+BERT, GPT-4 zero-shot on Banking77 / CLINC150), and [docs/report.md](docs/report.md)
+explains *technically why* the models score as they do vs. the literature. Test data in
+[data/](data/). To (re)generate:
 
 ```bash
 python3 src/compare_models.py     # writes benchmark_results.json
@@ -91,6 +101,22 @@ python3 src/compare_models.py     # writes benchmark_results.json
 
 The app reads `benchmark_results.json` at startup, so the tab loads instantly —
 no live model calls. Full case study in [docs/report.md](docs/report.md).
+
+### Capabilities we tested and dropped
+
+We prototyped nine capability suites and kept the **five** that are *hard, real, and
+assistant-relevant*. The four we removed, and why:
+
+| Dropped suite | Why removed |
+|---|---|
+| **Planning / intent routing** (email/calendar/cross-service) | A trivial 3-class version of intent classification — the real **Banking77** (77 classes) tests the same capability far harder; it was redundant. |
+| **State-reading / BEC** (spear-phishing vs legit) | Synthetic and saturated (100% for 3 of 4 models); it didn't separate models. |
+| **Tool selection** (pick the right function) | Every model scored 100% — too easy to be informative. |
+| **Reasoning / MMLU-Pro** (expert MCQ) | General expert-knowledge QA, not a personal-assistant capability — out of scope for an email/calendar agent. |
+
+The kept five map to what the assistant actually does: **read & classify** (Banking77,
+CLINC150), **act precisely** (tool-argument extraction), **write** (drafting), and stay
+**safe** (injection resistance).
 
 ## Run in the terminal / view the graph
 

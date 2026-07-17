@@ -65,3 +65,8 @@ token.json
 
 # Generated diagram
 graph.live.html
+
+# Research artifacts (kept locally, not pushed to the repo)
+research/
+*.pdf
+*.pptx
