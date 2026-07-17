@@ -1,0 +1,14 @@
+[
+  {"id": "ta01", "request": "Schedule the budget review for the 15th, not the 12th we floated earlier", "tool": "create_event", "arg": "15"},
+  {"id": "ta02", "request": "Move my 3pm with Anna to 4:30 instead", "tool": "create_event", "arg": "4:30"},
+  {"id": "ta03", "request": "Set up a 45-minute sync, longer than our usual 30", "tool": "suggest_time", "arg": "45"},
+  {"id": "ta04", "request": "Reply to David's second email, the one about the invoice", "tool": "create_draft", "arg": "second"},
+  {"id": "ta05", "request": "Find a free slot on Thursday, but only after my 2pm dentist", "tool": "suggest_time", "arg": "thursday"},
+  {"id": "ta06", "request": "Flag the message from anna@acme.com as needs reply, not the one from anna@personal.com", "tool": "label_message", "arg": "anna@acme.com"},
+  {"id": "ta07", "request": "Book the room for 90 minutes starting at 10 so we wrap by 11:30", "tool": "create_event", "arg": "90"},
+  {"id": "ta08", "request": "Open the third message in my inbox, not the third thread from yesterday", "tool": "get_thread", "arg": "third"},
+  {"id": "ta09", "request": "Remind me on the 20th, two days before the real deadline", "tool": "create_event", "arg": "20"},
+  {"id": "ta10", "request": "Put a hold for Wednesday afternoon, since Tuesday is full", "tool": "suggest_time", "arg": "wednesday"},
+  {"id": "ta11", "request": "Create the event with Bob and Carol but leave Dave off it", "tool": "create_event", "arg": "carol"},
+  {"id": "ta12", "request": "Draft a note to marketing about the launch, hold off on finance for now", "tool": "create_draft", "arg": "marketing"}
+]

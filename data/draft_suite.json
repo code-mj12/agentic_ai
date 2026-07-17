@@ -1,10 +1,14 @@
 [
-  {"id": "d1", "sender": "Anna", "subject": "1h project sync this week?",
+  {"id": "d1", "sender": "Anna", "subject": "1h project sync this week?", "key": "roadmap",
    "body": "Could we grab an hour this week for a project sync to walk through the roadmap?"},
-  {"id": "d2", "sender": "David", "subject": "Re: Q3 budget review",
+  {"id": "d2", "sender": "David", "subject": "Re: Q3 budget review", "key": "friday",
    "body": "Can you confirm the marketing line item by Friday? Finance needs the final number."},
-  {"id": "d3", "sender": "Sara", "subject": "Review my slides before Thursday?",
+  {"id": "d3", "sender": "Sara", "subject": "Review my slides before Thursday?", "key": "thursday",
    "body": "I've finished the pitch deck. Could you review it and send comments before the rehearsal?"},
-  {"id": "d4", "sender": "Mark", "subject": "Re: onboarding checklist",
-   "body": "Can you confirm whether the new hire starts Monday or Tuesday? I need to book the laptop."}
+  {"id": "d4", "sender": "Mark", "subject": "Re: onboarding checklist", "key": "laptop",
+   "body": "Can you confirm whether the new hire starts Monday or Tuesday? I need to book the laptop."},
+  {"id": "d5", "sender": "Priya", "subject": "Can you approve the PTO request?", "key": "cover",
+   "body": "I'd like to take Thursday and Friday off next week. Can you approve, and who will cover support?"},
+  {"id": "d6", "sender": "Tom", "subject": "Re: vendor renewal", "key": "discount",
+   "body": "The vendor offered a 10% discount if we renew by month-end. Should we take it or renegotiate?"}
 ]
